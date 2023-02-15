@@ -31,5 +31,12 @@
     "@mikro-orm/core": "^5.6.9",
     "@mikro-orm/postgresql": "^5.6.9",
     "nodemon": "^2.0.20"
+  },
+    "mikro-orm": {
+    "useTsNode": true,
+    "configPaths": [
+      "./src/mikro-orm.config.ts",
+      "./dist/mikro-orm.config.js"
+    ]
   }
 }
