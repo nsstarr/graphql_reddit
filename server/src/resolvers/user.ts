@@ -4,7 +4,7 @@ import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } fro
 import argon2 from 'argon2'
 
 //use for arfuments
-@InputType() 
+@InputType()
 class UsernamePasswordInput {
     @Field()
     username: string;
@@ -23,46 +23,90 @@ class FieldError {
 //return from mutations
 @ObjectType()
 class UserResponse {
-    @Field(() => [Error, {nullable: true})
-    errors?: Error[];
+    @Field(() => [FieldError], { nullable: true })
+    errors?: FieldError[];
 
-    @Field(() => User, {nullable: true})
+    @Field(() => User, { nullable: true })
     user?: User;
 }
 
 @Resolver()
 export default class UserResolver {
 
-    @Mutation(() => User)
+    @Mutation(() => UserResponse)
     async register(
         @Arg('options') options: UsernamePasswordInput,
         @Ctx() { em }: MyContext
-    ) {
+    ): Promise<UserResponse> {
+        if (options.username.length <= 3) {
+            return {
+                errors: [{
+                    field: "username",
+                    message: "length must be greater than 3",
+                }]
+            };
+        };
+        if (options.password.length <= 3) {
+            return {
+                errors: [{
+                    field: "password",
+                    message: "length must be greater than 3",
+                }]
+            };
+        };
+
         const hashedPassword = await argon2.hash(options.password)
-        const user = em.create(User, { 
+        const user = em.create(User, {
             username: options.username,
-            password: hashedPassword });
-        await em.persistAndFlush(user)
-        return user;
+            password: hashedPassword
+        });
+        try {
+            await em.persistAndFlush(user)
+        } catch (err) {
+            if (err.code === "23505") {
+                return {
+                    errors: [
+                        {
+                            field: "username",
+                            message: "username already taken",
+                        },
+                    ],
+                };
+            }
+        }
+
+        return { user };
     }
 
     @Mutation(() => UserResponse)
     async login(
         @Arg('options') options: UsernamePasswordInput,
         @Ctx() { em }: MyContext
-    ) : Promise<UserResponse>{
-        const user = await em.findOne(User, {username: options.username});
-        if(!user){
+    ): Promise<UserResponse> {
+        const user = await em.findOne(User, { username: options.username });
+        if (!user) {
             return {
-                errors:[{
-                    field:"username",
-                    message: "that username doesn't exist"
-                }]
-            }
+                errors: [
+                    {
+                        field: "username",
+                        message: "that username doesn't exist"
+                    },
+                ],
+            };
         }
 
-        const valid = await argon2.verify(user.password, options.password)
-        return user;
+        const valid = await argon2.verify(user.password, options.password);
+        if (!valid) {
+            return {
+                errors: [
+                    {
+                        field: "password",
+                        message: "incorrect password",
+                    },
+                ],
+            };
+        }
+        return { user };
     }
 }
 
