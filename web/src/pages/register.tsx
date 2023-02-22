@@ -11,9 +11,9 @@ import {
 import { Wrapper } from "../components/Wrapper";
 import InputField from "../components/InputField";
 import { useRegisterMutation } from "../generated/graphql";
+import { toErrorMap } from "../utils/toErrorMap";
 
 interface registerProps {}
-
 
 const Register: React.FC<registerProps> = ({}) => {
   const [, register] = useRegisterMutation();
@@ -21,10 +21,12 @@ const Register: React.FC<registerProps> = ({}) => {
     <Wrapper variant="small">
       <Formik
         initialValues={{ username: "", password: "" }}
-        onSubmit={ async (values) => {
+        onSubmit={async (values, { setErrors }) => {
           console.log(values);
-          const response = await register(values)
-          response.data.register?.user?.id
+          const response = await register(values);
+          if (response.data?.register.errors) {
+            setErrors(toErrorMap(response.data.register.errors));
+          }
         }}
       >
         {({ isSubmitting }) => (
@@ -35,13 +37,16 @@ const Register: React.FC<registerProps> = ({}) => {
               label="Username"
             />
             <Box mt={4}>
-            <InputField
-              name="password"
-              placeholder="password"
-              label="Password"
-              type="password"
-            /></Box>
-            <Button type="submit" color="teal" mt={6} isLoading={isSubmitting}>register</Button>
+              <InputField
+                name="password"
+                placeholder="password"
+                label="Password"
+                type="password"
+              />
+            </Box>
+            <Button type="submit" color="teal" mt={6} isLoading={isSubmitting}>
+              register
+            </Button>
           </Form>
         )}
       </Formik>
