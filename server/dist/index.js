@@ -21,12 +21,17 @@ const type_graphql_1 = require("type-graphql");
 const hello_1 = require("./resolvers/hello");
 const post_1 = require("./resolvers/post");
 const user_1 = __importDefault(require("./resolvers/user"));
+const cors_1 = __importDefault(require("cors"));
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const orm = yield core_1.MikroORM.init(mikro_orm_config_1.default);
     yield orm.getMigrator().up();
     const generator = orm.getSchemaGenerator();
     yield generator.updateSchema();
     const app = (0, express_1.default)();
+    app.use((0, cors_1.default)({
+        origin: "http://localhost:3000",
+        credentials: true,
+    }));
     const apolloServer = new apollo_server_express_1.ApolloServer({
         schema: yield (0, type_graphql_1.buildSchema)({
             resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.default],
@@ -35,7 +40,10 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         context: (() => ({ em: orm.em }))
     });
     yield apolloServer.start();
-    apolloServer.applyMiddleware({ app });
+    apolloServer.applyMiddleware({
+        app,
+        cors: false,
+    });
     app.get("/", (_, res) => {
         res.send("hello!");
     });
