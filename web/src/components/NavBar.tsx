@@ -7,7 +7,6 @@ interface NavBarProps {}
 export const NavBar: React.FC<NavBarProps> = ({}) => {
   return (
     <Flex bg="tomato" p="4">
-  
       <Box ml={"auto"}>
         <NextLink href="/login">
           <Button mr={4} color="white">
