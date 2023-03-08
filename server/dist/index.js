@@ -22,27 +22,44 @@ const hello_1 = require("./resolvers/hello");
 const post_1 = require("./resolvers/post");
 const user_1 = __importDefault(require("./resolvers/user"));
 const cors_1 = __importDefault(require("cors"));
+var session = require("express-session");
+var MySQLStore = require("express-mysql-session")(session);
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const orm = yield core_1.MikroORM.init(mikro_orm_config_1.default);
     yield orm.getMigrator().up();
+    const app = (0, express_1.default)();
+    var options = {
+        host: "localhost",
+        port: 3306,
+        user: "session_test",
+        password: "password",
+        database: "session_test"
+    };
+    var sessionStore = new MySQLStore(options);
+    app.use(session({
+        key: "session_cookie_name",
+        secret: "session_cookie_secret",
+        store: sessionStore,
+        resave: false,
+        saveUninitialized: false
+    }));
     const generator = orm.getSchemaGenerator();
     yield generator.updateSchema();
-    const app = (0, express_1.default)();
     app.use((0, cors_1.default)({
         origin: "http://localhost:3000",
-        credentials: true,
+        credentials: true
     }));
     const apolloServer = new apollo_server_express_1.ApolloServer({
         schema: yield (0, type_graphql_1.buildSchema)({
             resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.default],
-            validate: false,
+            validate: false
         }),
-        context: (() => ({ em: orm.em }))
+        context: ({ req, res }) => ({ em: orm.em, req, res })
     });
     yield apolloServer.start();
     apolloServer.applyMiddleware({
         app,
-        cors: false,
+        cors: false
     });
     app.get("/", (_, res) => {
         res.send("hello!");
@@ -54,5 +71,5 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
 main().catch((err) => {
     console.error(err);
 });
-console.log('hello world hey');
+console.log("hello world hey");
 //# sourceMappingURL=index.js.map
