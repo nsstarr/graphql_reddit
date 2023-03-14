@@ -33,7 +33,9 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         port: 3306,
         user: "session_test",
         password: "password",
-        database: "session_test"
+        database: "session_test",
+        checkExpirationInterval: 1000 * 60 * 60 * 2,
+        expiration: 1000 * 60 * 60 * 24
     };
     var sessionStore = new MySQLStore(options);
     app.use(session({
@@ -41,12 +43,16 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         secret: "session_cookie_secret",
         store: sessionStore,
         resave: false,
-        saveUninitialized: false
+        saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            maxAge: 1000 * 60 * 60 * 24,
+        },
     }));
     const generator = orm.getSchemaGenerator();
     yield generator.updateSchema();
     app.use((0, cors_1.default)({
-        origin: "http://localhost:3000",
+        origin: true,
         credentials: true
     }));
     const apolloServer = new apollo_server_express_1.ApolloServer({
@@ -54,12 +60,13 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.default],
             validate: false
         }),
-        context: ({ req, res }) => ({ em: orm.em, req, res })
+        context: ({ req, res }) => ({ em: orm.em, req, res,
+        })
     });
     yield apolloServer.start();
     apolloServer.applyMiddleware({
         app,
-        cors: false
+        cors: false,
     });
     app.get("/", (_, res) => {
         res.send("hello!");

@@ -15,34 +15,34 @@ function betterUpdateQuery<Result, Query>(
 }
 
 const client = createClient({
-  url: "http://localhost:4000/graphql",
+  url:'http://localhost:4000/graphql',
   fetchOptions: {
-    credentials: "include"
+    credentials: "include",
   },
-  exchanges: [
-    dedupExchange,
-    cacheExchange({
-      updates: {
-        Mutation: {
-          login: (_result, args, cache, info) => {
-            cache.updateQuery({ query: MeDocument }, (data: MeQuery) => {})
-           betterUpdateQuery<LoginMutation, MeQuery>(
-            cache,
-            {query: MeDocument},
-            _result,
-            (result, query) => {
-             if (result.login.errors) {
-              return query
-             } else {
-              return me: result.login.user,
-             }
-            })
-          }
-        }
-      }
-    }),
-    fetchExchange
-  ]
+  // exchanges: [
+  //   dedupExchange,
+  //   cacheExchange({
+  //     updates: {
+  //       Mutation: {
+  //         login: (_result, args, cache, info) => {
+  //           cache.updateQuery({ query: MeDocument }, (data: MeQuery) => {})
+  //          betterUpdateQuery<LoginMutation, MeQuery>(
+  //           cache,
+  //           {query: MeDocument},
+  //           _result,
+  //           (result, query) => {
+  //            if (result.login.errors) {
+  //             return query
+  //            } else {
+  //             return me: result.login.user,
+  //            }
+  //           })
+  //         }
+  //       }
+  //     }
+  //   }),
+  //   fetchExchange
+  // ]
 });
 
 function MyApp({ Component, pageProps }: AppProps) {

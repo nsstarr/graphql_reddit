@@ -24,7 +24,9 @@ const main = async () => {
     port: 3306,
     user: "session_test",
     password: "password",
-    database: "session_test"
+    database: "session_test",
+    checkExpirationInterval: 1000 * 60 * 60 * 2,
+    expiration: 1000 * 60 * 60 * 24
   };
 
   var sessionStore = new MySQLStore(options);
@@ -35,7 +37,11 @@ const main = async () => {
       secret: "session_cookie_secret",
       store: sessionStore,
       resave: false,
-      saveUninitialized: false
+      saveUninitialized: false,
+       cookie: {
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24,
+      },
     })
   );
 
@@ -44,7 +50,7 @@ const main = async () => {
 
   app.use(
     cors({
-      origin: "http://localhost:3000",
+      origin: true,
       credentials: true
     })
   );
@@ -54,14 +60,17 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false
     }),
-    context: ({ req, res }): MyContext => ({ em: orm.em, req, res })
+    context: ({ req, res }): MyContext => ({ em: orm.em, req, res,
+     })
   });
 
   await apolloServer.start();
 
-  apolloServer.applyMiddleware({
+// const corsOptions = { origin: "http://localhost:3000", credentials: true };
+
+apolloServer.applyMiddleware({
     app,
-    cors: false
+    cors: false,
   });
 
   app.get("/", (_, res) => {
